@@ -5,13 +5,25 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.TopicManager = exports.BasicTopic = undefined;
+exports.greet = greet;
+
+var _lodash = require('lodash');
+
+var _lodash2 = _interopRequireDefault(_lodash);
 
 var _index = require('./topic-manager/index');
 
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 exports.BasicTopic = _index.BasicTopic;
 exports.TopicManager = _index.TopicManager;
+function greet() {
+    _lodash2.default.forEach([1, 2, 3], function (i) {
+        console.log(i);
+    });
+}
 
-},{"./topic-manager/index":3}],2:[function(require,module,exports){
+},{"./topic-manager/index":3,"lodash":2}],2:[function(require,module,exports){
 
 },{}],3:[function(require,module,exports){
 'use strict';
