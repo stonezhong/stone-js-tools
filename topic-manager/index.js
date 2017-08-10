@@ -8,6 +8,13 @@ function addToSet(target, source) {
 
 export class BasicTopic {
     /**
+     * @return {string} A unique topic id
+     */
+    getTopicId() {
+
+    }
+
+    /**
      * Apply change to a topic
      * Derived class need to implement this method
      * @abstract
@@ -96,24 +103,35 @@ export class TopicManager {
     constructor() {
         /** @member {Object.<string, TopicTracker>} _topicTracker */
         this._topicTrackers = {};
-        /** @member {number} _nextTopicId*/
-        this._nextTopicId = 1;
+        this._topicFactories = [];
     }
 
-    _getNextTopicId() {
-        const nextTopicId = `topic-${this._nextTopicId}`;
-        this._nextTopicId ++;
-        return nextTopicId;
+    addTopicFactory(factory) {
+        this._topicFactories.push(factory);
     }
 
-    /**
-     * Register a topic, return the topic id
-     * @param {BasicTopic} topic 
-     */
-    registerTopic(topic) {
-        const newTopicId = this._getNextTopicId();
-        this._topicTrackers[newTopicId] = new TopicTracker(topic);
-        return newTopicId;
+    async _getTopicTracker(topicId) {
+        let topicTracker = this._topicTrackers[topicId];
+        if (topicTracker) {
+            return topicTracker;
+        }
+
+        let topic = null;
+        for (let i = 0; i < this._topicFactories.length; i ++) {
+            const topicFactory = this._topicFactories[i];
+            topic = await topicFactory(topicId);
+            if (topic) {
+                break;
+            }
+        }
+
+        if (topic === null) {
+            throw new Error(`topic ${topicId} does not exist`);
+        }
+
+        topicTracker = new TopicTracker(topic);
+        this._topicTrackers[topicId] = topicTracker;
+        return topicTracker;
     }
 
     /**
@@ -124,8 +142,8 @@ export class TopicManager {
      * @param {string} subAction 
      * @param {Object} payload 
      */
-    applyChange(topicId, action, subAction, payload) {
-        const topicTracker = this._topicTrackers[topicId];
+    async applyChange(topicId, action, subAction, payload) {
+        const topicTracker = await this._getTopicTracker(topicId);
         const topic = topicTracker.getTopic();
 
         topic.applyChange(action, subAction, payload);
@@ -153,7 +171,12 @@ export class TopicManager {
      * @param {Object.<string, number>} queryRequest // key: topicId, value: version
      * @param {number} timeoutInMS
      */
-    query({query, timeoutInMS}) {
+    async query({query, timeoutInMS}) {
+        for (let topicId in query) {
+            await this._getTopicTracker(topicId);
+        }
+        // pass here, all topics in the query are valid
+
         const pendingQuery = new PendingQuery({query, timeoutInMS});
         if (this._isQueryRequestMature(pendingQuery)) {
             this._completePendingQuery(pendingQuery);
@@ -212,7 +235,7 @@ class QueryBuilder {
         this._target = target;
     }
 
-    set(key, value = -1) {
+    topic(key, value = -1) {
         this._items.push({key, value});
         return this;
     }
