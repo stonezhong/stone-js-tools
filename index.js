@@ -5,4 +5,20 @@ import {
     queryBuilder,
 } from './topic-manager/index';
 
-export { TopicManager, BasicTopic, queryBuilder };
+import {
+    Lock
+} from './locks/index';
+
+import {
+    sleep
+} from './utils/index';
+
+export { 
+    TopicManager, 
+    BasicTopic, 
+    queryBuilder,
+
+    Lock,
+
+    sleep,
+};
